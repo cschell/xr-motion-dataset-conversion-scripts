@@ -1,5 +1,3 @@
-import pandas as pd
-import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 JOINTS = ["head", "left_hand", "right_hand"]
