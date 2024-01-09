@@ -77,9 +77,10 @@ def load_and_convert_recording(file_path):
         .assign(timestamp=pd.to_timedelta(timestamps - np.nanmin(timestamps), unit="s"))
         .dropna(subset="timestamp")
         .set_index("timestamp")
-        .pipe(_convert_m_to_cm)
         .interpolate(method="time")
-        # Todo
+        .assign(delta_time_ms=lambda df: (df.index.total_seconds() * 1000).round().astype(int))
+        .reset_index(drop=True)
+        .pipe(_convert_m_to_cm)
         .dropna()
     )
 
@@ -121,4 +122,4 @@ if __name__ == "__main__":
     dataset_path = "raw_datasets/VR.net"
     output_path = "converted_datasets/VR.net"
 
-    convert_and_store(dataset_path, output_path, format="parquet")
+    convert_and_store(dataset_path, output_path, format="csv")
