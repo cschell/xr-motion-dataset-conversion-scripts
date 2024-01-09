@@ -79,6 +79,7 @@ def load_and_convert_recording(file_path):
         .set_index("timestamp")
         .pipe(_convert_m_to_cm)
         .interpolate(method="time")
+        # Todo
         .dropna()
     )
 
@@ -87,21 +88,37 @@ def load_and_convert_recording(file_path):
     return recording
 
 
-def convert(dataset_path, output_path):
+def convert(dataset_path):
+    for recording_file in tqdm(list(dataset_path.glob("*/*/pose.csv"))):
+        recording = load_and_convert_recording(recording_file)
+
+        game, recording_name = recording_file.parts[-3:-1]
+
+        yield recording, (game, recording_name)
+
+
+def convert_and_store(dataset_path, output_path, format="csv"):
     dataset_path = Path(dataset_path)
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
 
-    for recording_file in tqdm(list(dataset_path.glob("*/*/pose.csv"))):
-        recording = load_and_convert_recording(recording_file)
+    for recording, (game, recording_name) in convert(dataset_path):
+        output_file_path = output_path / f"{game}_{recording_name}"
 
-        game, recording_name = recording_file.parts[-3:-1]
-        recording.round(3).to_csv(output_path / f"{game}_{recording_name}.csv", index=False)
+        output_file_path.parents[0].mkdir(exist_ok=True, parents=True)
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_file_path.with_suffix(".csv"), index=False)
+            case "parquet":
+                recording.to_parquet(output_file_path.with_suffix(".parquet"))
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
     dataset_path = "raw_datasets/VR.net"
     output_path = "converted_datasets/VR.net"
 
-    convert(dataset_path, output_path)
+    convert_and_store(dataset_path, output_path, format="parquet")
