@@ -3,6 +3,8 @@ from setuptools import setup, find_packages
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
+print(find_packages())
+
 setup(
     name='motion_dataset_converter',
     version='0.1.0',
