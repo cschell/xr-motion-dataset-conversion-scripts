@@ -3,5 +3,6 @@ __pycache__
 
 raw_datasets
 converted_datasets
+kinematic_xr_datasets
 .idea
 .vscode

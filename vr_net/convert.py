@@ -79,9 +79,9 @@ def load_and_convert_recording(file_path):
         .set_index("timestamp")
         .interpolate(method="time")
         .assign(delta_time_ms=lambda df: (df.index.total_seconds() * 1000).round().astype(int))
-        .reset_index(drop=True)
         .pipe(_convert_m_to_cm)
         .dropna()
+        .reset_index(drop=True)
     )
 
     assert len(recording) > 10, "replay is too short"
@@ -92,8 +92,9 @@ def load_and_convert_recording(file_path):
 def convert(dataset_path):
     for recording_file in tqdm(list(dataset_path.glob("*/*/pose.csv"))):
         recording = load_and_convert_recording(recording_file)
-
         game, recording_name = recording_file.parts[-3:-1]
+        recording["session"] = game
+        recording["user"] = recording_name.split(" ")[0]
 
         yield recording, (game, recording_name)
 
@@ -119,7 +120,7 @@ def convert_and_store(dataset_path, output_path, format="csv"):
 
 
 if __name__ == "__main__":
-    dataset_path = "raw_datasets/VR.net"
-    output_path = "converted_datasets/VR.net"
+    dataset_path = "raw_datasets/vr_net"
+    output_path = "converted_datasets/vr_net"
 
-    convert_and_store(dataset_path, output_path, format="csv")
+    convert_and_store(dataset_path, output_path, format="parquet")

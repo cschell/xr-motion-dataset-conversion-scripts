@@ -1,3 +1,4 @@
+# %%
 import sys
 import pandas as pd
 from xror import XROR
@@ -45,16 +46,18 @@ tilt_brush_column_names = [
     "drawing",
 ]
 
-DEMO_MODE = False
+DEMO_MODE = True
 
 if DEMO_MODE:
     MAX_USERS = 5
+    MAX_RECS_PER_USER = 5
     print(
         f"WARNING: Demo mode is active, so only the first {MAX_USERS} users will be processed;"
         "set `DEMO_MODE = False` to process all users."
     )
 else:
     MAX_USERS = None
+    MAX_RECS_PER_USER = None
 
 
 def load_recording(recording_file):
@@ -67,22 +70,15 @@ def load_recording(recording_file):
     return recording
 
 
-def convert(dataset_path, output_path):
-    dataset_path = Path(dataset_path)
-    output_path = Path(output_path)
+def convert(dataset_path):
+    user_dirs = list(Path(dataset_path).glob("*"))[:MAX_USERS]
 
-    recording_files = Path(dataset_path).glob("*/*.xror")
-
-    user_dirs = Path(dataset_path).glob("*")
-
-    for user_dir in tqdm(list(user_dirs), desc="processing users", total=MAX_USERS):
-        recording_files = user_dir.glob("*.xror")
-        for file_idx, recording_file in enumerate(recording_files):
+    for user_dir in tqdm(user_dirs, desc="processing users"):
+        recording_files = list(user_dir.glob("*.xror"))[:MAX_RECS_PER_USER]
+        for recording_file in recording_files:
             recording = load_recording(recording_file)
-            if MAX_USERS and file_idx >= MAX_USERS:
-                break
 
-            user_id = recording.data["info"]["user"]["id"]
+            user = recording.data["info"]["user"]["id"]
             app = recording.data["info"]["software"]["app"]["name"]
 
             if app == "Beat Saber":
@@ -101,15 +97,31 @@ def convert(dataset_path, output_path):
                 .assign(delta_time_ms=lambda df: (df["delta_time_ms"] - df["delta_time_ms"].iloc[0]) * time_scaling)
             )
 
-            recording_output_path = output_path / app / user_id
-            recording_output_path.mkdir(parents=True, exist_ok=True)
+            session = recording_file.stem
+            yield df, (user, session)
 
-            session_id = recording_file.stem
-            df.round(3).to_csv(recording_output_path / f"{session_id}.csv", index=False)
+
+def convert_and_store(dataset_path, output_path, format="csv"):
+    output_path = Path(output_path)
+
+    output_path.mkdir(parents=True, exist_ok=True)
+    for recording, (user, session) in convert(dataset_path):
+        output_file_path = output_path / user / session
+        output_file_path.parents[0].mkdir(exist_ok=True, parents=True)
+
+        recording = recording.assign(user=user, session=session)
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_file_path.with_suffix(".csv"), index=False)
+            case "parquet":
+                recording.to_parquet(output_file_path.with_suffix(".parquet"))
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
-    dataset_path = "raw_datasets/BOXRR-23"
-    output_path = "converted_datasets/BOXRR-23"
+    dataset_path = "raw_datasets/boxrr23/"
+    output_path = "converted_datasets/boxrr23"
 
-    convert(dataset_path, output_path)
+    convert_and_store(dataset_path, output_path)

@@ -35,14 +35,7 @@ column_mapping = {
 }
 
 
-recording_path = Path("Data_Set_for_Exploring_the_Stability_of_Behavioral_Biometrics_in_Virtual_Reality.csv")
-
-
-def convert(dataset_file_path, output_path, assumed_fps=90):
-    output_path = Path(output_path)
-
-    output_path.mkdir(parents=True, exist_ok=True)
-
+def convert(dataset_file_path, assumed_fps=90):
     dataset = pd.read_csv(dataset_file_path, index_col=False)
     num_sessions = dataset["session-uuid"].unique().size
 
@@ -52,16 +45,35 @@ def convert(dataset_file_path, output_path, assumed_fps=90):
             .pipe(_euler_to_quat)
             .pipe(_convert_m_to_cm)
             .pipe(_convert_coord_system_from_RUB_to_RUF)
-            .assign(delta_time_ms=lambda df: np.arange(len(df)) * (1000 / assumed_fps))[
-                sorted(list(column_mapping.values()))
-            ]
+            .assign(delta_time_ms=lambda df: np.arange(len(df)) * (1000 / assumed_fps))[sorted(list(column_mapping.values()))]
         )
         user = df["user-token"].iloc[0]
-        recording.round(3).to_csv(output_path / f"{user}_{session_id}.csv", index=False)
+
+        yield recording, (user, session_id)
+
+
+def convert_and_store(dataset_path, output_path, format="csv", **convert_kwargs):
+    output_path = Path(output_path)
+
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    for recording, (user, session_id) in convert(dataset_path, **convert_kwargs):
+        recording["user"] = user
+        recording["session"] = session_id
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_path / f"{user}_{session_id}.csv", index=False)
+            case "parquet":
+                recording.to_parquet(output_path / f"{user}_{session_id}.parquet")
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
-    dataset_file_path = "raw_datasets/LiebersBeatSaber23/Data_Set_for_Exploring_the_Stability_of_Behavioral_Biometrics_in_Virtual_Reality.csv"
+    dataset_file_path = (
+        "raw_datasets/LiebersBeatSaber23/Data_Set_for_Exploring_the_Stability_of_Behavioral_Biometrics_in_Virtual_Reality.csv"
+    )
     output_path = "converted_datasets/LiebersBeatSaber23"
 
-    convert(dataset_file_path, output_path)
+    convert_and_store(dataset_file_path, output_path, format="parquet", assumed_fps=90)

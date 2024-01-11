@@ -38,11 +38,13 @@ def convert(dataset_path):
 
     for recording_file in tqdm(list(dataset_path.glob("players/*/*/vr-controllers*.csv"))):
         player_id, session = recording_file.parts[-3:-1]
-        is_part_1 = not (recording_file.stem[-1] == "2")
+        if recording_file.stem[-1] == "2":
+            continue  # skipping this, as there is just one case where there is more than one recording per session
 
         recording = pd.read_csv(recording_file).rename(columns=column_mapping)[column_mapping.values()]
         assert recording.select_dtypes(include=[object]).shape[1] == 0, "DataFrame contains non-numeric columns"
-        yield recording, (player_id, session, is_part_1)
+
+        yield recording, (player_id, session)
 
 
 def convert_and_store(dataset_path, output_path, format="csv"):
@@ -50,10 +52,10 @@ def convert_and_store(dataset_path, output_path, format="csv"):
 
     output_path.mkdir(parents=True, exist_ok=True)
 
-    for recording, (player_id, session, is_part_1) in convert(dataset_path):
-        output_file_path = (
-            output_path / f"player_{int(player_id):02d}/{session}/recording_part-{'1' if is_part_1 else '2'}"
-        )
+    for recording, (player_id, session) in convert(dataset_path):
+        recording["user"] = int(player_id)
+        recording["session"] = session
+        output_file_path = output_path / f"player_{int(player_id):02d}/{session}"
 
         output_file_path.parents[0].mkdir(exist_ok=True, parents=True)
         match format.lower():
@@ -66,7 +68,7 @@ def convert_and_store(dataset_path, output_path, format="csv"):
 
 
 if __name__ == "__main__":
-    dataset_path = "raw_datasets/who-is-alyx"
-    output_path = "converted_datasets/who-is-alyx"
+    dataset_path = "raw_datasets/who_is_alyx"
+    output_path = "converted_datasets/who_is_alyx"
 
     convert_and_store(dataset_path, output_path, format="parquet")

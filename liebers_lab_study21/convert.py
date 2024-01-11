@@ -30,11 +30,8 @@ column_mapping = {
 }
 
 
-def convert(dataset_path, output_path):
+def convert(dataset_path):
     dataset_path = Path(dataset_path)
-    output_path = Path(output_path)
-
-    output_path.mkdir(parents=True, exist_ok=True)
 
     for recording_file in tqdm(list(dataset_path.glob("*.csv"))):
         recording = (
@@ -42,16 +39,36 @@ def convert(dataset_path, output_path):
             .rename(columns=column_mapping)
             .pipe(_euler_to_quat)
             .pipe(_convert_m_to_cm)
-            .pipe(_convert_coord_system_from_RUB_to_RUF)[
-                sorted(list(column_mapping.values()) + [f"{j}_rot_w" for j in JOINTS])
-            ]
+            .pipe(_convert_coord_system_from_RUB_to_RUF)[sorted(list(column_mapping.values()) + [f"{j}_rot_w" for j in JOINTS])]
         )
 
-        recording.round(3).to_csv(output_path / recording_file.name, index=False)
+        scene, user, norm, session, repetition = recording_file.stem.split("_")
+
+        session = session.endswith("2") + 1  # convert to 1 or 2
+
+        yield recording, (recording_file.name, scene, user, norm, session, repetition)
+
+
+def convert_and_store(dataset_path, output_path, format="csv"):
+    output_path = Path(output_path)
+
+    output_path.mkdir(parents=True, exist_ok=True)
+    for recording, (recording_file_name, scene, user, norm, session, repetition) in convert(dataset_path):
+        output_file_path = output_path / recording_file_name
+
+        recording = recording.assign(scene=scene, user=user, norm=norm, session=session, repetition=repetition)
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_file_path.with_suffix(".csv"), index=False)
+            case "parquet":
+                recording.to_parquet(output_file_path.with_suffix(".parquet"))
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
     dataset_path = "raw_datasets/LiebersLabStudy21"
     output_path = "converted_datasets/LiebersLabStudy21"
 
-    convert(dataset_path, output_path)
+    convert_and_store(dataset_path, output_path)

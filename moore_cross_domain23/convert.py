@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 import sys
 import pandas as pd
 from tqdm import tqdm
@@ -34,11 +35,9 @@ column_mapping = {
 }
 
 
-def convert(dataset_path, output_path):
+def convert(dataset_path):
     dataset_path = Path(dataset_path)
-    output_path = Path(output_path)
-
-    output_path.mkdir(parents=True, exist_ok=True)
+    dataset_path.mkdir(parents=True, exist_ok=True)
 
     for recording_file in tqdm(list(dataset_path.glob("data/*.csv"))):
         recording = (
@@ -49,11 +48,32 @@ def convert(dataset_path, output_path):
             .assign(delta_time_ms=lambda df: df["delta_time_ms"] * 1000)[column_mapping.values()]
         )
 
-        recording.to_csv(output_path / recording_file.name, index=False)
+        token, build = recording_file.stem.split("_")
+        user = re.findall("FAB\d{3}.", token)[0]
+
+        yield recording, (recording_file.name, user, build)
+
+
+def convert_and_store(dataset_path, output_path, format="csv"):
+    output_path = Path(output_path)
+
+    output_path.mkdir(parents=True, exist_ok=True)
+    for recording, (recording_file_name, user, build) in convert(dataset_path):
+        output_file_path = output_path / recording_file_name
+
+        recording = recording.assign(user=user, build=build)
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_file_path.with_suffix(".csv"), index=False)
+            case "parquet":
+                recording.to_parquet(output_file_path.with_suffix(".parquet"))
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
     dataset_path = "raw_datasets/MooreCrossDomain23"
     output_path = "converted_datasets/MooreCrossDomain23"
 
-    convert(dataset_path, output_path)
+    convert_and_store(dataset_path, output_path)

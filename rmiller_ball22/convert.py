@@ -58,9 +58,7 @@ def load_recordings(dataset_path, system, user, session):
 
     all_recordings = []
     for rs in zip(*all_recordings_by_joint):
-        all_recordings.append(
-            pd.concat(rs, axis=1).rename(columns=column_mapping)[column_mapping.values()].astype("float")
-        )
+        all_recordings.append(pd.concat(rs, axis=1).rename(columns=column_mapping)[column_mapping.values()].astype("float"))
 
     return all_recordings
 
@@ -76,10 +74,8 @@ def convert_recording(recording):
     return converted_recording
 
 
-def convert(dataset_path: str, output_path: str):
+def convert(dataset_path: str):
     dataset_path = Path(dataset_path)
-    output_path = Path(output_path, parents=True)
-    output_path.mkdir(exist_ok=True)
 
     print(f"Reading data from {dataset_path}")
     data_overview = (
@@ -98,14 +94,35 @@ def convert(dataset_path: str, output_path: str):
         recordings = load_recordings(dataset_path, system, user, session)
         converted_recordings = [convert_recording(rec) for rec in recordings]
 
-        for repetition, rec in enumerate(converted_recordings):
-            rec.round(3).to_csv(output_path / f"{system}_{user}_{session}_{repetition}.csv", index=False)
+        for repetition, recording in enumerate(converted_recordings):
+            yield recording, (system, user, session, repetition)
 
-    print(f"Finished conversion")
+
+def convert_and_store(dataset_path, output_path, format="csv"):
+    output_path = Path(output_path)
+
+    output_path.mkdir(parents=True, exist_ok=True)
+    for recording, (system, user, session, repetition) in convert(dataset_path):
+        output_file_path = output_path / f"{system}_{user}_{session}_{repetition}"
+
+        recording = recording.assign(
+            system=system,
+            user=user,
+            session=session,
+            repetition=repetition,
+        )
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_file_path.with_suffix(".csv"), index=False)
+            case "parquet":
+                recording.to_parquet(output_file_path.with_suffix(".parquet"))
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
-    dataset_path = "raw_datasets/RMillerBall22/VR Motions"
-    output_path = "converted_datasets/RMillerBall22"
+    dataset_path = "raw_datasets/rmiller_ball22/VR Motions"
+    output_path = "converted_datasets/rmiller_ball22"
 
-    convert(dataset_path=dataset_path, output_path=output_path)
+    convert_and_store(dataset_path=dataset_path, output_path=output_path)

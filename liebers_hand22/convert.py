@@ -4,7 +4,7 @@ import pandas as pd
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parents[1]))
-from conversion_helpers import _convert_coord_system_from_RUB_to_RUF, _convert_m_to_cm, _euler_to_quat
+from conversion_helpers import _convert_coord_system_from_RUB_to_RUF, _convert_m_to_cm
 
 JOINTS = ["left_hand", "right_hand"]
 column_mapping = {
@@ -33,13 +33,13 @@ column_mapping = {
 }
 
 
-def convert(dataset_path, output_path):
+def convert(dataset_path):
     dataset_path = Path(dataset_path)
-    output_path = Path(output_path)
 
-    output_path.mkdir(parents=True, exist_ok=True)
+    dataset_path.mkdir(parents=True, exist_ok=True)
 
     for recording_file in tqdm(list(dataset_path.glob("*.tsv"))):
+        info = dict([attr.split("-") for attr in recording_file.stem.split("_")])
         try:
             recording = (
                 pd.read_csv(recording_file, sep="\t", low_memory=False)
@@ -51,13 +51,39 @@ def convert(dataset_path, output_path):
                 ]
             )
 
-            recording.round(3).to_csv(output_path / recording_file.name, index=False)
+            user = int(info["PID"])
+            session = int(info["SESSION"])
+            xr = info["XR"]
+            scene = info["SCENE"]
+            yield recording, (recording_file.name, user, session, xr, scene)
         except pd.errors.ParserError as e:
             print(f"WARNING: error parsing {recording_file}, skipping...")
+            continue
+
+
+def convert_and_store(dataset_path, output_path, format="csv"):
+    output_path = Path(output_path)
+
+    output_path.mkdir(parents=True, exist_ok=True)
+    for recording, (recording_file_name, user, session, xr, scene) in convert(dataset_path):
+        recording["user"] = user
+        recording["session"] = session
+        recording["xr"] = xr
+        recording["scene"] = scene
+
+        output_file_path = output_path / recording_file_name
+
+        match format.lower():
+            case "csv":
+                recording.round(3).to_csv(output_file_path.with_suffix(".csv"), index=False)
+            case "parquet":
+                recording.to_parquet(output_file_path.with_suffix(".parquet"))
+            case _:
+                raise Exception("unkown output format, aborting")
 
 
 if __name__ == "__main__":
     dataset_path = "raw_datasets/LiebersHand22/"
     output_path = "converted_datasets/LiebersHand22"
 
-    convert(dataset_path, output_path)
+    convert_and_store(dataset_path, output_path)
