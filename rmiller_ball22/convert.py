@@ -75,9 +75,8 @@ def convert_recording(recording):
 
 
 def convert(dataset_path: str):
-    dataset_path = Path(dataset_path)
+    dataset_path = Path(dataset_path) / "VR Motions"
 
-    print(f"Reading data from {dataset_path}")
     data_overview = (
         pd.DataFrame(
             [f.stem.split("_") for f in dataset_path.glob("*.csv")],
@@ -88,7 +87,6 @@ def convert(dataset_path: str):
         .reset_index(drop=True)
     )
 
-    print(f"Start conversion from '{dataset_path}' to '{output_path}'")
     for _idx, row in tqdm(data_overview.iterrows(), total=len(data_overview)):
         system, user, session = row
         recordings = load_recordings(dataset_path, system, user, session)

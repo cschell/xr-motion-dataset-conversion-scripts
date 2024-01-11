@@ -1,7 +1,7 @@
 .DS_Store
 __pycache__
 
-raw_datasets
+original_datasets
 converted_datasets
 kinematic_xr_datasets
 .idea
