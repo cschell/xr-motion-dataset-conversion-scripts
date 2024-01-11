@@ -36,7 +36,7 @@ def convert(dataset_path, output_path):
 
     output_path.mkdir(parents=True, exist_ok=True)
 
-    for recording_file in tqdm(list(dataset_path.glob("data/*.csv"))):
+    for recording_file in tqdm(list(dataset_path.glob("*.csv"))):
         recording = (
             pd.read_csv(recording_file)
             .rename(columns=column_mapping)
