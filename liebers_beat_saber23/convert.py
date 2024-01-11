@@ -36,7 +36,10 @@ column_mapping = {
 
 
 def convert(dataset_file_path, assumed_fps=90):
-    dataset = pd.read_csv(dataset_file_path, index_col=False)
+    dataset = pd.read_csv(
+        Path(dataset_file_path) / "Data_Set_for_Exploring_the_Stability_of_Behavioral_Biometrics_in_Virtual_Reality.csv",
+        index_col=False,
+    )
     num_sessions = dataset["session-uuid"].unique().size
 
     for session_id, df in tqdm(dataset.groupby("session-uuid"), total=num_sessions):
@@ -71,9 +74,7 @@ def convert_and_store(dataset_path, output_path, format="csv", **convert_kwargs)
 
 
 if __name__ == "__main__":
-    dataset_file_path = (
-        "raw_datasets/LiebersBeatSaber23/Data_Set_for_Exploring_the_Stability_of_Behavioral_Biometrics_in_Virtual_Reality.csv"
-    )
+    dataset_file_path = "raw_datasets/LiebersBeatSaber23/"
     output_path = "converted_datasets/LiebersBeatSaber23"
 
     convert_and_store(dataset_file_path, output_path, format="parquet", assumed_fps=90)

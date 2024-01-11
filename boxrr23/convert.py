@@ -46,19 +46,6 @@ tilt_brush_column_names = [
     "drawing",
 ]
 
-DEMO_MODE = True
-
-if DEMO_MODE:
-    MAX_USERS = 5
-    MAX_RECS_PER_USER = 5
-    print(
-        f"WARNING: Demo mode is active, so only the first {MAX_USERS} users will be processed;"
-        "set `DEMO_MODE = False` to process all users."
-    )
-else:
-    MAX_USERS = None
-    MAX_RECS_PER_USER = None
-
 
 def load_recording(recording_file):
     try:
@@ -70,11 +57,23 @@ def load_recording(recording_file):
     return recording
 
 
-def convert(dataset_path):
-    user_dirs = list(Path(dataset_path).glob("*"))[:MAX_USERS]
+def convert(dataset_path, demo_mode=True):
+    demo_mode = True
+
+    if demo_mode:
+        max_users = 5
+        max_recs_per_user = 5
+        print(
+            f"WARNING: Demo mode is active, so only the first {max_users} users will be processed;"
+            "set `demo_mode = False` to process all users."
+        )
+    else:
+        max_users = None
+        max_recs_per_user = None
+    user_dirs = list(Path(dataset_path).glob("*"))[:max_users]
 
     for user_dir in tqdm(user_dirs, desc="processing users"):
-        recording_files = list(user_dir.glob("*.xror"))[:MAX_RECS_PER_USER]
+        recording_files = list(user_dir.glob("*.xror"))[:max_recs_per_user]
         for recording_file in recording_files:
             recording = load_recording(recording_file)
 
@@ -101,7 +100,7 @@ def convert(dataset_path):
             yield df, (user, session)
 
 
-def convert_and_store(dataset_path, output_path, format="csv"):
+def convert_and_store(dataset_path, output_path, format="csv", demo_mode=True):
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
@@ -124,4 +123,4 @@ if __name__ == "__main__":
     dataset_path = "raw_datasets/boxrr23/"
     output_path = "converted_datasets/boxrr23"
 
-    convert_and_store(dataset_path, output_path)
+    convert_and_store(dataset_path, output_path, demo_mode=True)
