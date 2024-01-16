@@ -49,16 +49,19 @@ def convert(dataset_path):
                 .assign(delta_time_ms=lambda df: df["delta_time_s"] * 1000)[
                     sorted(list(column_mapping.values()) + ["delta_time_ms"])
                 ]
+                .drop(columns=["delta_time_s"])
             )
-
-            user = int(info["PID"])
-            session = int(info["SESSION"])
-            xr = info["XR"]
-            scene = info["SCENE"]
-            yield recording, (recording_file.name, user, session, xr, scene)
-        except pd.errors.ParserError as e:
+            assert (
+                recording.select_dtypes(include=[object]).shape[1] == 0
+            ), f"DataFrame contains non-numeric columns: {recording.select_dtypes(include=[object])}"
+        except (pd.errors.ParserError, AssertionError) as e:
             print(f"WARNING: error parsing {recording_file}, skipping...")
             continue
+        user = int(info["PID"])
+        session = int(info["SESSION"])
+        xr = info["XR"]
+        scene = info["SCENE"]
+        yield recording, (recording_file.name, user, session, xr, scene)
 
 
 def convert_and_store(dataset_path, output_path, format="csv"):
@@ -66,8 +69,8 @@ def convert_and_store(dataset_path, output_path, format="csv"):
 
     output_path.mkdir(parents=True, exist_ok=True)
     for recording, (recording_file_name, user, session, xr, scene) in convert(dataset_path):
-        recording["user"] = user
-        recording["session"] = session
+        recording["user"] = str(user)
+        recording["session"] = str(session)
         recording["xr"] = xr
         recording["scene"] = scene
 
@@ -80,10 +83,3 @@ def convert_and_store(dataset_path, output_path, format="csv"):
                 recording.to_parquet(output_file_path.with_suffix(".parquet"))
             case _:
                 raise Exception("unkown output format, aborting")
-
-
-if __name__ == "__main__":
-    dataset_path = "raw_datasets/LiebersHand22/"
-    output_path = "converted_datasets/LiebersHand22"
-
-    convert_and_store(dataset_path, output_path)

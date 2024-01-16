@@ -42,7 +42,7 @@ def convert(dataset_file_path, assumed_fps=90):
     )
     num_sessions = dataset["session-uuid"].unique().size
 
-    for session_id, df in tqdm(dataset.groupby("session-uuid"), total=num_sessions):
+    for session, df in tqdm(dataset.groupby("session-uuid"), total=num_sessions):
         recording = (
             df.rename(columns=column_mapping)
             .pipe(_euler_to_quat)
@@ -52,7 +52,7 @@ def convert(dataset_file_path, assumed_fps=90):
         )
         user = df["user-token"].iloc[0]
 
-        yield recording, (user, session_id)
+        yield recording, (user, session)
 
 
 def convert_and_store(dataset_path, output_path, format="csv", **convert_kwargs):
@@ -60,21 +60,14 @@ def convert_and_store(dataset_path, output_path, format="csv", **convert_kwargs)
 
     output_path.mkdir(parents=True, exist_ok=True)
 
-    for recording, (user, session_id) in convert(dataset_path, **convert_kwargs):
+    for recording, (user, session) in convert(dataset_path, **convert_kwargs):
         recording["user"] = user
-        recording["session"] = session_id
+        recording["session"] = session
 
         match format.lower():
             case "csv":
-                recording.round(3).to_csv(output_path / f"{user}_{session_id}.csv", index=False)
+                recording.round(3).to_csv(output_path / f"{user}_{session}.csv", index=False)
             case "parquet":
-                recording.to_parquet(output_path / f"{user}_{session_id}.parquet")
+                recording.to_parquet(output_path / f"{user}_{session}.parquet")
             case _:
                 raise Exception("unkown output format, aborting")
-
-
-if __name__ == "__main__":
-    dataset_file_path = "raw_datasets/LiebersBeatSaber23/"
-    output_path = "converted_datasets/LiebersBeatSaber23"
-
-    convert_and_store(dataset_file_path, output_path, format="parquet", assumed_fps=90)

@@ -70,10 +70,3 @@ def convert_and_store(dataset_path, output_path, format="csv"):
                 recording.to_parquet(output_file_path.with_suffix(".parquet"))
             case _:
                 raise Exception("unkown output format, aborting")
-
-
-if __name__ == "__main__":
-    dataset_path = "raw_datasets/MooreCrossDomain23"
-    output_path = "converted_datasets/MooreCrossDomain23"
-
-    convert_and_store(dataset_path, output_path)

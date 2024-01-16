@@ -1,4 +1,3 @@
-# %%
 import sys
 import pandas as pd
 from xror import XROR
@@ -7,7 +6,7 @@ import bson
 from tqdm import tqdm
 
 sys.path.append(str(Path(__file__).parents[1]))
-from conversion_helpers import _convert_coord_system_from_RUB_to_RUF, _convert_m_to_cm
+from conversion_helpers import _convert_coord_system_from_RUB_to_RUF, _convert_m_to_cm, _convert_dm_to_cm
 
 beatsaber_column_names = [
     "delta_time_ms",
@@ -58,8 +57,6 @@ def load_recording(recording_file):
 
 
 def convert(dataset_path, demo_mode=True):
-    demo_mode = True
-
     if demo_mode:
         max_users = 5
         max_recs_per_user = 5
@@ -83,32 +80,37 @@ def convert(dataset_path, demo_mode=True):
             if app == "Beat Saber":
                 column_names = beatsaber_column_names
                 time_scaling = 1000
+                unit_converter = _convert_m_to_cm
             elif app == "Tilt Brush":
                 column_names = tilt_brush_column_names
                 time_scaling = 1
+                unit_converter = _convert_dm_to_cm
             else:
                 raise Exception("Unknown App")
 
             df = (
                 pd.DataFrame(recording.data["frames"], columns=column_names)
-                .pipe(_convert_m_to_cm)
+                .pipe(unit_converter)
                 .pipe(_convert_coord_system_from_RUB_to_RUF)
                 .assign(delta_time_ms=lambda df: (df["delta_time_ms"] - df["delta_time_ms"].iloc[0]) * time_scaling)
             )
 
+            for col in df.select_dtypes(include=["float64"]).columns:
+                df[col] = df[col].astype("float32")
+
             session = recording_file.stem
-            yield df, (user, session)
+            yield df, (user, session, app)
 
 
 def convert_and_store(dataset_path, output_path, format="csv", demo_mode=True):
     output_path = Path(output_path)
 
     output_path.mkdir(parents=True, exist_ok=True)
-    for recording, (user, session) in convert(dataset_path):
+    for recording, (user, session, app) in convert(dataset_path, demo_mode):
         output_file_path = output_path / user / session
         output_file_path.parents[0].mkdir(exist_ok=True, parents=True)
 
-        recording = recording.assign(user=user, session=session)
+        recording = recording.assign(user=user, session=session, app=app)
 
         match format.lower():
             case "csv":
@@ -117,10 +119,3 @@ def convert_and_store(dataset_path, output_path, format="csv", demo_mode=True):
                 recording.to_parquet(output_file_path.with_suffix(".parquet"))
             case _:
                 raise Exception("unkown output format, aborting")
-
-
-if __name__ == "__main__":
-    dataset_path = "raw_datasets/boxrr23/"
-    output_path = "converted_datasets/boxrr23"
-
-    convert_and_store(dataset_path, output_path, demo_mode=True)
