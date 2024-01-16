@@ -2,12 +2,14 @@
 
 Welcome to our XR Motion Dataset Conversion repository. This tool is designed for researchers and developers
 working with XR motion datasets, providing a unified and standardized approach to handling these datasets as proposed in
-our [paper](#TODO). Furthermore, this tool is designed to perform the required pre-processing of the datasets so that they can be 
+our [paper](#TODO). Furthermore, this tool is designed to perform the required pre-processing of the datasets so that
+they can be
 visualized with our [XR Motion Player](#TODO) in order to get visual insights from the dataset.
 
 ## About This Repository
 
-This repository contains Python scripts capable of converting various XR motion datasets into our proposed standardized format. The
+This repository contains Python scripts capable of converting various XR motion datasets into our proposed standardized
+format. The
 aim is to streamline data handling and analysis processes in XR research by promoting a consistent format across
 different datasets.
 
@@ -99,24 +101,25 @@ pip install -r requirements.txt
 
 ## Usage Example
 
-To convert a dataset, simply run the appropriate `convert.py` script. For example:
-python convert.py --input /path/to/dataset --output /path/to/standardized/dataset
+To convert a dataset, simply run the appropriate `convert.py` script.
 
 ## Dataset Overview
 
-Below is a list of datasets currently supported by our [XR Motion Dataset Catalogue](https://huggingface.co/datasets/cschell/xr-motion-dataset-catalogue). Each dataset has its specific `convert.py` script:
+Below is a list of datasets currently supported by
+our [XR Motion Dataset Catalogue](https://huggingface.co/datasets/cschell/xr-motion-dataset-catalogue). Each dataset has
+its specific `convert.py` script:
 
-| No. | Dataset Name       | Description                                                                                                                                                                         | Link                                   |
-|-----|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------|
-| 1   | LiebersLabStudy21  | This dataset focuses on users performing specific bowling and archery motions.                                                                                                      | [More Info](link to dataset or script) |
-| 2   | LiebersHand22      | This dataset focuses on users performing interactions with various interface elements, such as buttons and sliders, in AR and VR environments for motion-based user identification. | [More Info](link to dataset or script) |
-| 3   | RMillerBall22      | This dataset focuses on capturing the motions of users performing ball throwing actions in VR.                                                                                      | [More Info](link to dataset or script) |
-| 4   | Who-Is-Alyx        | This dataset focuses on capturing the motions of users playing the game 'Half-<Life: Alyx' in VR.                                                                                   | [More Info](link to dataset or script) |
-| 5   | BOXRR Beatsaber    | This dataset focuses on users playing the game Beatsaber in VR and aims to provide a large-scale human motion dataset for researchers and studies.                                  | [More Info](link to dataset or script) |
-| 6   | BOXRR Tiltbrush    | This dataset focuses on users playing the game Tiltbrush in VR and aims to provide a large-scale human motion dataset for researchers and studies.                                  | [More Info](link to dataset or script) |
-| 7   | LiebersBeatSaber23 | This dataset focuses on users playing the game Beatsaber and is aimed at user identification through motion.                                                                        | [More Info](link to dataset or script) |
-| 8   | MooreCrossDomain23 | This dataset focuses on users performing assembly tasks in VR and is also intended for user identification research.                                                                | [More Info](link to dataset or script) |
-| 9   | VR.net             | This dataset focuses on users playing various VR games and was designed for cybersickness research.                                                                                 | [More Info](link to dataset or script) |
+| No. | Dataset Name       | Description                                                                                                                                                                         |
+|-----|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1   | LiebersLabStudy21  | This dataset focuses on users performing specific bowling and archery motions.                                                                                                      |
+| 2   | LiebersHand22      | This dataset focuses on users performing interactions with various interface elements, such as buttons and sliders, in AR and VR environments for motion-based user identification. |
+| 3   | RMillerBall22      | This dataset focuses on capturing the motions of users performing ball throwing actions in VR.                                                                                      |
+| 4   | Who-Is-Alyx        | This dataset focuses on capturing the motions of users playing the game 'Half-<Life: Alyx' in VR.                                                                                   |
+| 5   | BOXRR Beatsaber    | This dataset focuses on users playing the game Beatsaber in VR and aims to provide a large-scale human motion dataset for researchers and studies.                                  |
+| 6   | BOXRR Tiltbrush    | This dataset focuses on users playing the game Tiltbrush in VR and aims to provide a large-scale human motion dataset for researchers and studies.                                  |
+| 7   | LiebersBeatSaber23 | This dataset focuses on users playing the game Beatsaber and is aimed at user identification through motion.                                                                        |
+| 8   | MooreCrossDomain23 | This dataset focuses on users performing assembly tasks in VR and is also intended for user identification research.                                                                |
+| 9   | VR.net             | This dataset focuses on users playing various VR games and was designed for cybersickness research.                                                                                 |
 
 ## License
 
