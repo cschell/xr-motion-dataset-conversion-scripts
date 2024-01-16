@@ -13,6 +13,16 @@ def _convert_m_to_cm(df):
     return df
 
 
+def _convert_dm_to_cm(df):
+    df = df.copy()
+
+    for c in df.columns:
+        if "_pos_" in c:
+            df[c] *= 10
+
+    return df
+
+
 def _convert_coord_system_from_RUB_to_RUF(df):
     df = df.copy()
 
